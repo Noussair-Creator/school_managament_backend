@@ -9,6 +9,16 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('role.permission:,create permission')->only('store');
+        $this->middleware('role.permission:,show permission')->only('show');
+        $this->middleware('role.permission:,update permission')->only('update');
+        $this->middleware('role.permission:,delete permission')->only('destroy');
+        $this->middleware('role.permission:,give permissions')->only('assignPermissionToRole');
+        $this->middleware('role.permission:,remove permissions')->only('revokePermissionFromRole');
+    }
+
     // Get all permissions
     public function index()
     {
@@ -105,7 +115,8 @@ class PermissionController extends Controller
             'role' => $role
         ]);
     }
-    //  Revoke a permission from a role
+
+    // Revoke a permission from a role
     public function revokePermissionFromRole(Request $request, $roleId)
     {
         $role = Role::find($roleId);
@@ -127,6 +138,7 @@ class PermissionController extends Controller
         ]);
     }
 
+    // Uncomment below methods to assign/revoke permissions for users (if needed)
 
     // // Assign a permission to a user
     // public function assignPermissionToUser(Request $request, $userId)

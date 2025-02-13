@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
     ];
     protected $routeMiddleware = [
         'role.permission' => \App\Http\Middleware\RolePermissionMiddleware::class,
+        'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
     ];
 }

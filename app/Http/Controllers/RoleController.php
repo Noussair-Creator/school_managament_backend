@@ -9,6 +9,15 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('role.permission:,show role')->only('show');
+        $this->middleware('role.permission:,update role')->only('update');
+        $this->middleware('role.permission:,delete role')->only('destroy');
+        $this->middleware('role.permission:,give permissions')->only('assignPermissionToRole');
+        $this->middleware('role.permission:,remove permissions')->only('revokePermissionFromRole');
+    }
+
     // Get all roles
     public function index()
     {
@@ -19,7 +28,6 @@ class RoleController extends Controller
     // Create a new role
     public function store(Request $request)
     {
-        // Validate input
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:roles,name',
         ]);
@@ -54,7 +62,6 @@ class RoleController extends Controller
             return response()->json(['message' => 'Role not found'], 404);
         }
 
-        // Validate input
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $roleId,
         ]);
@@ -87,15 +94,12 @@ class RoleController extends Controller
     // Assign a role to a user
     public function assignRole(Request $request, $userId)
     {
-        // Validate that the 'role' field is provided and not empty
         $request->validate([
-            'role' => 'required|string|exists:roles,name',  // Ensure role is required, a string, and exists in the 'roles' table
+            'role' => 'required|string|exists:roles,name',
         ]);
 
-        // Find the user
         $user = User::find($userId);
 
-        // Ensure the user exists
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -129,10 +133,10 @@ class RoleController extends Controller
             'user' => $user
         ]);
     }
+
     // Get all permissions assigned to a specific role
     public function showPermissions($roleId)
     {
-        // Find the role by ID
         $role = Role::find($roleId);
 
         if (!$role) {
@@ -142,10 +146,55 @@ class RoleController extends Controller
         // Get all the permissions assigned to the role
         $permissions = $role->permissions;
 
-        // Return the permissions associated with the role
         return response()->json([
             'role' => $role->name,
             'permissions' => $permissions
+        ]);
+    }
+
+    // Assign permission to a role
+    public function assignPermissionToRole(Request $request, $roleId)
+    {
+        $role = Role::find($roleId);
+
+        if (!$role) {
+            return response()->json(['message' => 'Role not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'permission' => 'required|string|exists:permissions,name',
+        ]);
+
+        $permission = Permission::findByName($validated['permission']);
+        $role->givePermissionTo($permission);
+
+        return response()->json([
+            'message' => 'Permission assigned to role successfully',
+            'role' => $role,
+            'permission' => $permission
+        ]);
+    }
+
+    // Revoke permission from a role
+    public function revokePermissionFromRole(Request $request, $roleId)
+    {
+        $role = Role::find($roleId);
+
+        if (!$role) {
+            return response()->json(['message' => 'Role not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'permission' => 'required|string|exists:permissions,name',
+        ]);
+
+        $permission = Permission::findByName($validated['permission']);
+        $role->revokePermissionTo($permission);
+
+        return response()->json([
+            'message' => 'Permission revoked from role successfully',
+            'role' => $role,
+            'permission' => $permission
         ]);
     }
 }

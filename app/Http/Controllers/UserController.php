@@ -6,9 +6,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('role.permission:,create user')->only('storeByAdmin');
+        $this->middleware('role.permission:,show user')->only('show');
+        $this->middleware('role.permission:,update user')->only('update');
+        $this->middleware('role.permission:,delete user')->only('deleteByAdmin');
+    }
+
     // Get all users (Superadmin can view all users)
     public function index()
     {
@@ -16,31 +25,7 @@ class UserController extends Controller
 
         return response()->json($users);
     }
-    // Store a new user (Superadmin only can create users)
-    // public function store(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|email|unique:users,email',
-    //         'password' => 'required|string|confirmed|min:8',
-    //         'role' => 'nullable|string|exists:roles,name', // Role validation (optional)
-    //     ]);
 
-    //     // Hash the password
-    //     $validated['password'] = bcrypt($validated['password']);
-
-    //     // Create the user
-    //     $user = User::create($validated);
-
-    //     // Assign the role if provided, otherwise default to 'guest'
-    //     $role = $validated['role'] ?? 'guest';
-    //     $user->assignRole($role);
-
-    //     return response()->json([
-    //         'message' => 'User created successfully',
-    //         'user' => $user
-    //     ], 201);
-    // }
     // Show a specific user (Superadmin can view any user)
     public function show($userId)
     {
@@ -54,6 +39,7 @@ class UserController extends Controller
     // Update the authenticated user's details (only name, email, and password can be updated)
     public function update(Request $request)
     {
+
         // Validate the incoming data (excluding role validation)
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -101,6 +87,8 @@ class UserController extends Controller
     // Update a user (Superadmin can update any user)
     public function updateByAdmin(Request $request, $userId)
     {
+        $this->authorize('update user'); // Ensures the current user has the permission
+
         $user = User::find($userId);
 
         if (!$user) {
@@ -138,6 +126,7 @@ class UserController extends Controller
     // Store a new user by Superadmin (with optional role assignment)
     public function storeByAdmin(Request $request)
     {
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -162,6 +151,7 @@ class UserController extends Controller
     // Delete a user (Superadmin can delete any user)
     public function deleteByAdmin($userId)
     {
+
         $user = User::find($userId);
 
         if (!$user) {

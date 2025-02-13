@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class ClassroomController extends Controller
 {
+    // Apply authentication middleware
+    public function __construct()
+{
+    $this->middleware('auth')->only('index', 'show'); // Ensure user is authenticated for general viewing
+    $this->middleware('role.permission:,create classroom')->only('store'); // Only users with permission to create classrooms
+    $this->middleware('role.permission:,update classroom')->only('update'); // Only users with permission to update classrooms
+    $this->middleware('role.permission:,delete classroom')->only('destroy'); // Only users with permission to delete classrooms
+}
+
     // List all classrooms
     public function index()
     {
@@ -24,8 +33,7 @@ class ClassroomController extends Controller
         /**
          * @var \App\Models\User
          */
-        // if (!Auth::user()->hasRole('superadmin')) {
-        if (!Auth::user()) {
+        if (!Auth::user() || !Auth::user()->hasRole('superadmin')) {
             return response()->json(['message' => 'Access denied. Only superadmins can create classrooms.'], 403);
         }
 
@@ -58,7 +66,6 @@ class ClassroomController extends Controller
         return response()->json($classroom);
     }
 
-
     // Update classroom details by superadmin
     public function update(Request $request, $classroomId)
     {
@@ -66,8 +73,7 @@ class ClassroomController extends Controller
         /**
          * @var \App\Models\User
          */
-        // if (!Auth::user()->hasRole('superadmin')) {
-        if (!Auth::user()) {
+        if (!Auth::user() || !Auth::user()->hasRole('superadmin')) {
             return response()->json(['message' => 'Access denied. Only superadmins can update classrooms.'], 403);
         }
 
@@ -76,6 +82,7 @@ class ClassroomController extends Controller
         if (!$classroom) {
             return response()->json(['message' => 'Classroom not found'], 404);
         }
+
         $validated = $request->validate([
             'name' => 'string|max:255|unique:classrooms,name,' . $classroomId,
             'capacity' => 'integer',
@@ -90,8 +97,7 @@ class ClassroomController extends Controller
     public function destroy($classroomId)
     {
         // Only superadmin can delete classrooms
-        // if (!Auth::user()->hasRole('superadmin')) {
-        if (!Auth::user()) {
+        if (!Auth::user() || !Auth::user()->hasRole('superadmin')) {
             return response()->json(['message' => 'Access denied. Only superadmins can delete classrooms.'], 403);
         }
 

@@ -3,31 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
-use App\Models\Reservation;
+// use App\Models\Reservation;
 use App\Models\Reservations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReservationsController extends Controller
 {
+    public function __construct()
+    {
+        // Apply authentication middleware
+        $this->middleware('auth'); // Ensure user is authenticated
+
+        // Add role-based permission middleware
+        $this->middleware('role.permission:,create reservation')->only('makeReservation');
+        $this->middleware('role.permission:,update reservation')->only('updateReservation');
+        $this->middleware('role.permission:,delete reservation')->only('cancelReservation');
+        $this->middleware('role.permission:,show reservation')->only('listReservations', 'show');
+    }
+
     // Teacher reserves a classroom
     public function makeReservation(Request $request, $classroomId)
     {
-        // Only teachers can reserve classrooms
-        /**
-         * @var \App\Models\User
-         */
-        if (!Auth::user()) {
-            return response()->json(['message' => 'Access denied. Only teachers can reserve classrooms.'], 403);
-        }
-
         // Validate reservation time
         $validated = $request->validate([
             'start_time' => 'required|date|after:now',
-            'end_time' => 'required|date|after:start_time', // end_time must be after start_time
+            'end_time' => 'required|date|after:start_time',
         ]);
 
-        // Find the classroom by ID
         $classroom = Classroom::find($classroomId);
 
         if (!$classroom) {
@@ -60,59 +63,28 @@ class ReservationsController extends Controller
         ]);
     }
 
-    // Teacher unreserves a classroom
-    // public function unreserve($classroomId)
-    // {
-    //     // Only teachers can unreserve classrooms
-    //     /**
-    //      * @var \App\Models\User
-    //      */
-
-    //     if (!Auth::user()) {
-    //         return response()->json(['message' => 'Access denied. Only teachers can unreserve classrooms.'], 403);
-    //     }
-
-    //     // Find the reservation for the classroom
-    //     $reservation = Reservations::where('classroom_id', $classroomId)
-    //         ->where('user_id', Auth::id()) // Ensure the teacher is the one who reserved it
-    //         ->first();
-
-    //     if (!$reservation) {
-    //         return response()->json(['message' => 'No reservation found or you cannot unreserve this classroom.'], 404);
-    //     }
-
-    //     // Delete the reservation
-    //     $reservation->delete();
-
-    //     return response()->json(['message' => 'Classroom unreserved successfully']);
-    // }
-
     // List all reservations for a teacher
     public function listReservations()
     {
-        // Only teachers can view their reservations
-        /**
-         * @var \App\Models\User
-         */
-        if (!Auth::user()) {
-            return response()->json(['message' => 'Access denied. Only teachers can view their reservations.'], 403);
-        }
-
-        // Get all reservations for the authenticated user with classroom details and creator
-        // $reservations = Reservations::where('user_id', Auth::id())->with('classroom', 'user')->get();
-        // Get all reservations for the authenticated user
-        $reservations = Reservations::with('classroom', 'user')->get();
-
+        $reservations = Reservations::with('classroom', 'user')->where('user_id', Auth::id())->get();
         return response()->json($reservations);
     }
-    public function updateReservation(Request $request, $reservationId)
+
+    // Show reservation details
+    public function show($reservationId)
     {
-        // Ensure the user is authenticated
-        if (!Auth::user()) {
-            return response()->json(['message' => 'Access denied. Only teachers can update reservations.'], 403);
+        $reservation = Reservations::with('classroom', 'user')->find($reservationId);
+
+        if (!$reservation) {
+            return response()->json(['message' => 'Reservation not found'], 404);
         }
 
-        // Find the reservation
+        return response()->json($reservation);
+    }
+
+    // Update a reservation (only the owner can update)
+    public function updateReservation(Request $request, $reservationId)
+    {
         $reservation = Reservations::find($reservationId);
 
         if (!$reservation) {
@@ -124,7 +96,6 @@ class ReservationsController extends Controller
             return response()->json(['message' => 'Unauthorized. You can only update your own reservations.'], 403);
         }
 
-        // Validate the new reservation times
         $validated = $request->validate([
             'start_time' => 'required|date|after:now',
             'end_time' => 'required|date|after:start_time',
@@ -132,7 +103,7 @@ class ReservationsController extends Controller
 
         // Check if the new time slot is available
         $existingReservation = Reservations::where('classroom_id', $reservation->classroom_id)
-            ->where('id', '!=', $reservationId) // Exclude current reservation
+            ->where('id', '!=', $reservationId)
             ->where(function ($query) use ($validated) {
                 $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
                     ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']]);
@@ -143,7 +114,6 @@ class ReservationsController extends Controller
             return response()->json(['message' => 'Classroom is already reserved during this time.'], 400);
         }
 
-        // Update reservation details
         $reservation->start_time = $validated['start_time'];
         $reservation->end_time = $validated['end_time'];
         $reservation->save();
@@ -153,24 +123,10 @@ class ReservationsController extends Controller
             'reservation' => $reservation
         ]);
     }
-    public function show($reservationId)
-    {
-        $reservation = Reservations::with('classroom', 'user')->find($reservationId);
 
-        if (!$reservation) {
-            return response()->json(['message' => 'Reservation not found'], 404);
-        }
-
-        return response()->json($reservation);
-    }
+    // Cancel a reservation (only the owner can cancel)
     public function cancelReservation($reservationId)
     {
-        // Ensure the user is authenticated
-        if (!Auth::user()) {
-            return response()->json(['message' => 'Access denied. Only teachers can cancel reservations.'], 403);
-        }
-
-        // Find the reservation
         $reservation = Reservations::find($reservationId);
 
         if (!$reservation) {
@@ -188,4 +144,3 @@ class ReservationsController extends Controller
         return response()->json(['message' => 'Reservation canceled successfully']);
     }
 }
-
