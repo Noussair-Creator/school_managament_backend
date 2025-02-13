@@ -22,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ----------------------------------------
     // Superadmin & Admin Routes (User, Roles, Permissions)
     // ----------------------------------------
+    Route::middleware('role.permission:superadmin')->group(function () {
+        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+    });
     Route::middleware('role.permission:superadmin|admin')->group(function () {
         // User Management
 
@@ -33,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Role Management
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
-        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+
         Route::get('roles/{roleId}', [RoleController::class, 'show'])->name('roles.show');
         Route::put('roles/{roleId}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('roles/{roleId}', [RoleController::class, 'destroy'])->name('roles.destroy');
@@ -57,7 +60,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Classroom Management
         Route::post('classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
         Route::put('classrooms/{classroomId}', [ClassroomController::class, 'update'])->name('classrooms.update');
-
     });
 
     // ----------------------------------------
@@ -75,16 +77,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
         Route::delete('documents/{documentId}', [DocumentController::class, 'delete'])->name('documents.destroy');
 
-        // User Profile Routes (view, update, delete)
-        Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
-        Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
     });
 
     // ----------------------------------------
     // Guest Routes (View Profile)
     // ----------------------------------------
-    Route::middleware('role.permission:guest')->group(function () {
+    Route::middleware('role.permission:guest|superadmin|admin|teacher')->group(function () {
+        // User Profile Routes (view, update, delete)
         Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
         Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
@@ -102,4 +101,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reservations/{reservationId}', [ReservationsController::class, 'show'])->name('reservations.show'); // Show specific reservation
     Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');  // List all reservations
 });
-

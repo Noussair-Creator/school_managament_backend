@@ -16,6 +16,7 @@ class RoleController extends Controller
         $this->middleware('role.permission:,delete role')->only('destroy');
         $this->middleware('role.permission:,give permissions')->only('assignPermissionToRole');
         $this->middleware('role.permission:,remove permissions')->only('revokePermissionFromRole');
+        // $this->middleware('role.permission:,show role permissions')->only('showRolePermissions');
     }
 
     // Get all roles

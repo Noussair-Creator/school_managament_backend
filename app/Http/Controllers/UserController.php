@@ -16,6 +16,8 @@ class UserController extends Controller
         $this->middleware('role.permission:,show user')->only('show');
         $this->middleware('role.permission:,update user')->only('update');
         $this->middleware('role.permission:,delete user')->only('deleteByAdmin');
+
+
     }
 
     // Get all users (Superadmin can view all users)
@@ -29,7 +31,7 @@ class UserController extends Controller
     // Show a specific user (Superadmin can view any user)
     public function show($userId)
     {
-        $user = User::with('roles')->find($userId);
+        $user = User::with('roles.permissions')->find($userId);
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -79,7 +81,7 @@ class UserController extends Controller
     // Show the authenticated user's profile
     public function profile()
     {
-        $user = Auth::user()->load('roles'); // Eager load roles relationship || Get the currently authenticated user
+        $user = Auth::user()->load('roles'); // Eager load roles and permissions relationships
 
         return response()->json($user);
     }

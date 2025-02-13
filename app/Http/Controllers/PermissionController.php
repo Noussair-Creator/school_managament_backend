@@ -94,27 +94,30 @@ class PermissionController extends Controller
         return response()->json(['message' => 'Permission deleted successfully']);
     }
 
-    // Assign a permission to a role
     public function assignPermissionToRole(Request $request, $roleId)
     {
+        // Find the role by ID
         $role = Role::find($roleId);
 
         if (!$role) {
             return response()->json(['message' => 'Role not found'], 404);
         }
 
+        // Validate the incoming request, allowing multiple permissions
         $validated = $request->validate([
-            'permission' => 'required|string|exists:permissions,name',
+            'permissions' => 'required|array', // Ensures that permissions is an array
+            'permissions.*' => 'string|exists:permissions,name', // Ensures each permission is valid
         ]);
 
-        // Assign the permission to the role
-        $role->givePermissionTo($validated['permission']);
+        // Assign the multiple permissions to the role
+        $role->givePermissionTo($validated['permissions']);
 
         return response()->json([
-            'message' => 'Permission assigned to role successfully',
+            'message' => 'Permissions assigned to role successfully',
             'role' => $role
         ]);
     }
+
 
     // Revoke a permission from a role
     public function revokePermissionFromRole(Request $request, $roleId)
