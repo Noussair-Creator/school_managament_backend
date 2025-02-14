@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-
+use Laravel\Sanctum\PersonalAccessToken;
 class AuthController extends Controller
 {
     /**
@@ -65,14 +65,17 @@ class AuthController extends Controller
         $user->tokens()->delete();
 
         // Create a new token
-        $token = $user->createToken($request->email)->plainTextToken;
+        $token = $user->createToken($request->email);
+        // Token will be automatically saved in the 'personal_access_tokens' table, including tokenable_type and tokenable_id
 
         return response()->json([
             'user' => $user,
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'message' => 'User logged in successfully'
         ]);
     }
+
+
 
     /**
      * User logout method.
@@ -95,4 +98,17 @@ class AuthController extends Controller
             'message' => 'User logged out successfully'
         ], 200);
     }
+
+
+        // Method to count active logged-in users
+        public function countLoggedInUsers()
+        {
+            // Count the number of users with non-expired tokens
+            $loggedInUsers = PersonalAccessToken::where('tokenable_type', User::class)
+            ->distinct('tokenable_id') // Use tokenable_id to count unique users
+            ->count('tokenable_id');
+
+            return response()->json(['logged_in_users' => $loggedInUsers]);
+        }
+
 }

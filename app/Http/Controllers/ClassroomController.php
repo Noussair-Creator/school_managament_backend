@@ -12,7 +12,7 @@ class ClassroomController extends Controller
     // Apply authentication middleware
     public function __construct()
 {
-    $this->middleware('auth')->only('index', 'show'); // Ensure user is authenticated for general viewing
+    // $this->middleware('auth')->only('index', 'show'); // Ensure user is authenticated for general viewing
     $this->middleware('role.permission:,create classroom')->only('store'); // Only users with permission to create classrooms
     $this->middleware('role.permission:,update classroom')->only('update'); // Only users with permission to update classrooms
     $this->middleware('role.permission:,delete classroom')->only('destroy'); // Only users with permission to delete classrooms

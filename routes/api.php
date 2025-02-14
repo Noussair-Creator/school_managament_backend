@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\ReservationsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -19,6 +21,9 @@ Route::post('login', [AuthController::class, 'login']);  // Login user
 Route::middleware('auth:sanctum')->group(function () {
     // Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout');
+    // Count Number Of Users
+    Route::get('/logged-in-users', [AuthController::class, 'countLoggedInUsers']);
+
     // ----------------------------------------
     // Superadmin & Admin Routes (User, Roles, Permissions)
     // ----------------------------------------
@@ -77,6 +82,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
         Route::delete('documents/{documentId}', [DocumentController::class, 'delete'])->name('documents.destroy');
 
+        // Post Management
+        Route::get('posts', [PostController::class, 'index']); // Get all posts
+        Route::get('posts/{postId}', [PostController::class, 'show']); // Get a single post
+        Route::post('posts', [PostController::class, 'store']); // Create a new post
+        Route::put('posts/{postId}', [PostController::class, 'update']); // Update a post
+        Route::delete('posts/{postId}', [PostController::class, 'delete']); // Delete a post
+
+        //  Comment Management
+        Route::get('posts/{postId}/comments', [CommentController::class, 'showComments']);
+        Route::post('posts/{postId}/comments', [CommentController::class, 'addComment']);
+        Route::put('comments/{commentId}', [CommentController::class, 'updateComment']);
+        Route::delete('comments/{commentId}', [CommentController::class, 'deleteComment']);
     });
 
     // ----------------------------------------
@@ -92,7 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ----------------------------------------
     // Classroom Viewing Routes (Accessible to All Authenticated Users)
     // ----------------------------------------
-    Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms
+    //Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms
     Route::get('classrooms/{classroomId}', [ClassroomController::class, 'show'])->name('classrooms.show');  // Show specific classroom
     Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
 
@@ -100,4 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('documents/{documentId}', [DocumentController::class, 'show'])->name('documents.show');
     Route::get('reservations/{reservationId}', [ReservationsController::class, 'show'])->name('reservations.show'); // Show specific reservation
     Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');  // List all reservations
+
 });
+// Without Auth For General User To see It
+Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms

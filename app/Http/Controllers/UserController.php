@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
+use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+
+
 
 class UserController extends Controller
 {
@@ -16,8 +20,6 @@ class UserController extends Controller
         $this->middleware('role.permission:,show user')->only('show');
         $this->middleware('role.permission:,update user')->only('update');
         $this->middleware('role.permission:,delete user')->only('deleteByAdmin');
-
-
     }
 
     // Get all users (Superadmin can view all users)
@@ -164,4 +166,9 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted successfully']);
     }
+
+
+
+
+
 }
