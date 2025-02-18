@@ -9,6 +9,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ReservationsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -121,3 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 // Without Auth For General User To see It
 Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return response()->json($request->user());
+});
