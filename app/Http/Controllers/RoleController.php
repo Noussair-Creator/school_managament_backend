@@ -10,14 +10,25 @@ use Spatie\Permission\Models\Permission;
 class RoleController extends Controller
 {
     public function __construct()
-    {
-        $this->middleware('role.permission:,show role')->only('show');
-        $this->middleware('role.permission:,update role')->only('update');
-        $this->middleware('role.permission:,delete role')->only('destroy');
-        $this->middleware('role.permission:,give permissions')->only('assignPermissionToRole');
-        $this->middleware('role.permission:,remove permissions')->only('revokePermissionFromRole');
-        // $this->middleware('role.permission:,show role permissions')->only('showRolePermissions');
-    }
+{
+    $this->middleware('auth');
+    $this->middleware('role.permission:all roles')->only('index');
+    $this->middleware('role.permission:show role')->only('show');
+    $this->middleware('role.permission:create role')->only('store');
+    $this->middleware('role.permission:update role')->only('update');
+    $this->middleware('role.permission:delete role')->only('destroy');
+    $this->middleware('role.permission:give permissions')->only('assignPermissionToRole');
+    $this->middleware('role.permission:remove permissions')->only('revokePermissionFromRole');
+    $this->middleware('role.permission:show permission')->only('showPermissions');
+    $this->middleware('role.permission:create permission')->only('assignPermissionToRole');
+    $this->middleware('role.permission:update permission')->only('assignPermissionToRole');
+    $this->middleware('role.permission:delete permission')->only('revokePermissionFromRole');
+    $this->middleware('role.permission:assign role')->only('assignRole');
+    $this->middleware('role.permission:remove role')->only('revokeRole');
+
+
+}
+
 
     // Get all roles
     public function index()

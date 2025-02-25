@@ -11,11 +11,12 @@ class DocumentController extends Controller
 {
     // Apply authentication middleware
     public function __construct()
-{
-    $this->middleware('auth')->only('upload', 'index'); // Ensure the user is authenticated
-    $this->middleware('role.permission:,create document')->only('upload'); // Only users with permission to create documents
-    $this->middleware('role.permission:,delete document')->only('delete'); // Only users with permission to delete documents
-}
+    {
+        $this->middleware('auth');
+        $this->middleware('role.permission:create document')->only('upload');
+        $this->middleware('role.permission:delete document')->only('delete');
+    }
+
 
     // Upload a document (Only authenticated users can upload)
     public function upload(Request $request)

@@ -12,117 +12,98 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-
-
-// Authenticated Routes: Requires 'auth:sanctum'
-// -----------------------------------------------------------
+// Public Routes (No Authentication Required)
 Route::post('register', [AuthController::class, 'register']);  // Register user
 Route::post('login', [AuthController::class, 'login']);  // Login user
 
+// Routes that require authentication
 Route::middleware('auth:sanctum')->group(function () {
     // Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('auth.logout');
-    // Count Number Of Users
+
+    // Count Number Of Logged-in Users
     Route::get('/logged-in-users', [AuthController::class, 'countLoggedInUsers']);
 
     // ----------------------------------------
-    // Superadmin & Admin Routes (User, Roles, Permissions)
+    // Permissions & Role Management
     // ----------------------------------------
-    Route::middleware('role.permission:superadmin')->group(function () {
-        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
-    });
-    Route::middleware('role.permission:superadmin|admin')->group(function () {
-        // User Management
+    Route::middleware('role.permission:create role')->post('roles', [RoleController::class, 'store'])->name('roles.store');
+    Route::middleware('role.permission:all roles')->get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::middleware('role.permission:show role')->get('roles/{roleId}', [RoleController::class, 'show'])->name('roles.show');
+    Route::middleware('role.permission:update role')->put('roles/{roleId}', [RoleController::class, 'update'])->name('roles.update');
+    Route::middleware('role.permission:delete role')->delete('roles/{roleId}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::middleware('role.permission:assign role')->post('users/{userId}/assign-role', [RoleController::class, 'assignRole'])->name('roles.assign');
+    Route::middleware('role.permission:remove role')->post('users/{userId}/revoke-role', [RoleController::class, 'revokeRole'])->name('roles.revoke');
 
-        Route::get('/users/{userId}', [UserController::class, 'show'])->name('users.show');
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/users', [UserController::class, 'storeByAdmin'])->name('users.store');
-        Route::put('/users/{userId}', [UserController::class, 'updateByAdmin'])->name('users.update');
-        Route::delete('/users/{userId}', [UserController::class, 'deleteByAdmin'])->name('users.destroy');
+    // Assign & Remove Permissions to Roles
+    Route::middleware('role.permission:give permissions')->post('roles/{roleId}/assign-permission', [PermissionController::class, 'assignPermissionToRole'])->name('permissions.assign');
+    Route::middleware('role.permission:remove permissions')->post('roles/{roleId}/revoke-permission', [PermissionController::class, 'revokePermissionFromRole'])->name('permissions.revoke');
 
-        // Role Management
-        Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
-
-        Route::get('roles/{roleId}', [RoleController::class, 'show'])->name('roles.show');
-        Route::put('roles/{roleId}', [RoleController::class, 'update'])->name('roles.update');
-        Route::delete('roles/{roleId}', [RoleController::class, 'destroy'])->name('roles.destroy');
-
-        // Assign/Remove Roles to/from Users
-        Route::post('users/{userId}/assign-role', [RoleController::class, 'assignRole'])->name('roles.assign');
-        Route::post('users/{userId}/remove-role', [RoleController::class, 'revokeRole'])->name('roles.remove');
-
-        // Permission Management
-        Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
-        Route::post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
-        Route::get('permissions/{permissionId}', [PermissionController::class, 'show'])->name('permissions.show');
-        Route::put('permissions/{permissionId}', [PermissionController::class, 'update'])->name('permissions.update');
-        Route::delete('permissions/{permissionId}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
-
-        // Assign/Revoke Permissions to/from Roles
-        Route::post('roles/{roleId}/assign-permission', [PermissionController::class, 'assignPermissionToRole'])->name('permissions.assign');
-        Route::post('roles/{roleId}/revoke-permission', [PermissionController::class, 'revokePermissionFromRole'])->name('permissions.revoke');
-        Route::get('/roles/{roleId}/permissions', [RoleController::class, 'showPermissions'])->name('roles.permissions');
-
-        // Classroom Management
-        Route::post('classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
-        Route::put('classrooms/{classroomId}', [ClassroomController::class, 'update'])->name('classrooms.update');
-    });
+    // Permissions Management
+    Route::middleware('role.permission:show permission')->get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::middleware('role.permission:create permission')->post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
+    Route::middleware('role.permission:update permission')->put('permissions/{permissionId}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::middleware('role.permission:delete permission')->delete('permissions/{permissionId}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 
     // ----------------------------------------
-    // Teacher, Admin & Superadmin Routes (Classrooms & Reservations)
+    // User Management
     // ----------------------------------------
-    Route::middleware('role.permission:teacher|superadmin|admin')->group(function () {
-        // Classroom Reservation Routes
-        Route::post('classrooms/{classroomId}/make-reservation', [ReservationsController::class, 'makeReservation'])->name('reservations.store');
-        Route::put('reservations/{reservationId}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
-        Route::get('reservations/{reservationId}', [ReservationsController::class, 'show'])->name('reservations.show');
-        Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
-        Route::delete('reservations/{reservationId}/cancel', [ReservationsController::class, 'cancelReservation'])->name('reservations.cancel');
-
-        // Document Routes (Upload & Delete)
-        Route::post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
-        Route::delete('documents/{documentId}', [DocumentController::class, 'delete'])->name('documents.destroy');
-
-        // Post Management
-        Route::get('posts', [PostController::class, 'index']); // Get all posts
-        Route::get('posts/{postId}', [PostController::class, 'show']); // Get a single post
-        Route::post('posts', [PostController::class, 'store']); // Create a new post
-        Route::put('posts/{postId}', [PostController::class, 'update']); // Update a post
-        Route::delete('posts/{postId}', [PostController::class, 'delete']); // Delete a post
-
-        //  Comment Management
-        Route::get('posts/{postId}/comments', [CommentController::class, 'showComments']);
-        Route::post('posts/{postId}/comments', [CommentController::class, 'addComment']);
-        Route::put('comments/{commentId}', [CommentController::class, 'updateComment']);
-        Route::delete('comments/{commentId}', [CommentController::class, 'deleteComment']);
-    });
+    Route::middleware('role.permission:create user')->post('/users', [UserController::class, 'storeByAdmin'])->name('users.store');
+    Route::middleware('role.permission:show user')->get('/users/{userId}', [UserController::class, 'show'])->name('users.show');
+    Route::middleware('role.permission:update user')->put('/users/{userId}', [UserController::class, 'update'])->name('users.update');
+    Route::middleware('role.permission:delete user')->delete('/users/{userId}', [UserController::class, 'deleteByAdmin'])->name('users.destroy');
 
     // ----------------------------------------
-    // Guest Routes (View Profile)
+    // Classroom Management
     // ----------------------------------------
-    Route::middleware('role.permission:guest|superadmin|admin|teacher')->group(function () {
-        // User Profile Routes (view, update, delete)
-        Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
-        Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
-    });
+    Route::middleware('role.permission:create classroom')->post('classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
+    Route::middleware('role.permission:update classroom')->put('classrooms/{classroomId}', [ClassroomController::class, 'update'])->name('classrooms.update');
+    Route::middleware('role.permission:delete classroom')->delete('classrooms/{classroomId}', [ClassroomController::class, 'destroy'])->name('classrooms.destroy');
 
     // ----------------------------------------
-    // Classroom Viewing Routes (Accessible to All Authenticated Users)
+    // Reservations Management
     // ----------------------------------------
-    //Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms
-    Route::get('classrooms/{classroomId}', [ClassroomController::class, 'show'])->name('classrooms.show');  // Show specific classroom
+    Route::middleware('role.permission:create reservation')->post('classrooms/{classroomId}/make-reservation', [ReservationsController::class, 'makeReservation'])->name('reservations.store');
+    Route::middleware('role.permission:update reservation')->put('reservations/{reservationId}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
+    Route::middleware('role.permission:delete reservation')->delete('reservations/{reservationId}/cancel', [ReservationsController::class, 'cancelReservation'])->name('reservations.cancel');
+    Route::middleware('role.permission:show reservation')->get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
+    Route::middleware('role.permission:show reservation')->get('reservations/{reservationId}', [ReservationsController::class, 'show'])->name('reservations.show');
+
+    // ----------------------------------------
+    // Documents Management
+    // ----------------------------------------
+    Route::middleware('role.permission:create document')->post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
+    Route::middleware('role.permission:delete document')->delete('documents/{documentId}', [DocumentController::class, 'delete'])->name('documents.destroy');
     Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
-
-    Route::get('documents/{documentId}/download', [DocumentController::class, 'download'])->name('documents.download');
     Route::get('documents/{documentId}', [DocumentController::class, 'show'])->name('documents.show');
-    Route::get('reservations/{reservationId}', [ReservationsController::class, 'show'])->name('reservations.show'); // Show specific reservation
-    Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');  // List all reservations
+    Route::get('documents/{documentId}/download', [DocumentController::class, 'download'])->name('documents.download');
 
+    // ----------------------------------------
+    // Posts & Comments Management
+    // ----------------------------------------
+    Route::get('posts', [PostController::class, 'index']);
+    Route::get('posts/{postId}', [PostController::class, 'show']);
+    Route::post('posts', [PostController::class, 'store']);
+    Route::put('posts/{postId}', [PostController::class, 'update']);
+    Route::delete('posts/{postId}', [PostController::class, 'delete']);
+
+    Route::get('posts/{postId}/comments', [CommentController::class, 'showComments']);
+    Route::post('posts/{postId}/comments', [CommentController::class, 'addComment']);
+    Route::put('comments/{commentId}', [CommentController::class, 'updateComment']);
+    Route::delete('comments/{commentId}', [CommentController::class, 'deleteComment']);
+
+    // ----------------------------------------
+    // User Profile Management
+    // ----------------------------------------
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
+    Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
 });
-// Without Auth For General User To see It
-Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');  // List all classrooms
 
+// Public Route for Viewing Classrooms
+Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
+
+// Authenticated User Information
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return response()->json($request->user());
 });

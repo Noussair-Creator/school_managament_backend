@@ -11,13 +11,15 @@ class PermissionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('role.permission:,create permission')->only('store');
-        $this->middleware('role.permission:,show permission')->only('show');
-        $this->middleware('role.permission:,update permission')->only('update');
-        $this->middleware('role.permission:,delete permission')->only('destroy');
-        $this->middleware('role.permission:,give permissions')->only('assignPermissionToRole');
-        $this->middleware('role.permission:,remove permissions')->only('revokePermissionFromRole');
+        $this->middleware('auth');
+        $this->middleware('role.permission:create permission')->only('store');
+        $this->middleware('role.permission:show permission')->only('show');
+        $this->middleware('role.permission:update permission')->only('update');
+        $this->middleware('role.permission:delete permission')->only('destroy');
+        $this->middleware('role.permission:give permissions')->only('assignPermissionToRole');
+        $this->middleware('role.permission:remove permissions')->only('revokePermissionFromRole');
     }
+
 
     // Get all permissions
     public function index()

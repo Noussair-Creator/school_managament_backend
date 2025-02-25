@@ -16,12 +16,31 @@ class RoleAndPermissionSeeder extends Seeder
 
         // Define all permissions
         $permissions = [
-            'create role', 'show role', 'update role', 'delete role',
-            'assign role', 'remove role', 'create permission', 'show permission',
-            'update permission', 'delete permission', 'give permissions', 'remove permissions',
-            'create user', 'show user', 'update user', 'delete user',
-            'create classroom', 'show classroom', 'update classroom', 'delete classroom',
-            'create reservation', 'show reservation', 'update reservation', 'delete reservation',
+            'all roles',
+            'create role',
+            'show role',
+            'update role',
+            'delete role',
+            'assign role',
+            'remove role',
+            'create permission',
+            'show permission',
+            'update permission',
+            'delete permission',
+            'give permissions',
+            'remove permissions',
+            'create user',
+            'show user',
+            'update user',
+            'delete user',
+            'create classroom',
+            'show classroom',
+            'update classroom',
+            'delete classroom',
+            'create reservation',
+            'show reservation',
+            'update reservation',
+            'delete reservation',
         ];
 
         // Create permissions if they don't exist

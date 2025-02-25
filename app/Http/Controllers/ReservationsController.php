@@ -12,15 +12,13 @@ class ReservationsController extends Controller
 {
     public function __construct()
     {
-        // Apply authentication middleware
-        $this->middleware('auth'); // Ensure user is authenticated
-
-        // Add role-based permission middleware
-        $this->middleware('role.permission:,create reservation')->only('makeReservation');
-        $this->middleware('role.permission:,update reservation')->only('updateReservation');
-        $this->middleware('role.permission:,delete reservation')->only('cancelReservation');
-        $this->middleware('role.permission:,show reservation')->only('listReservations', 'show');
+        $this->middleware('auth');
+        $this->middleware('role.permission:create reservation')->only('makeReservation');
+        $this->middleware('role.permission:update reservation')->only('updateReservation');
+        $this->middleware('role.permission:delete reservation')->only('cancelReservation');
+        $this->middleware('role.permission:show reservation')->only(['listReservations', 'show']);
     }
+
 
     // Teacher reserves a classroom
     public function makeReservation(Request $request, $classroomId)

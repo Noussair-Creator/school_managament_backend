@@ -16,11 +16,13 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('role.permission:,create user')->only('storeByAdmin');
-        $this->middleware('role.permission:,show user')->only('show');
-        $this->middleware('role.permission:,update user')->only('update');
-        $this->middleware('role.permission:,delete user')->only('deleteByAdmin');
+        $this->middleware('auth');
+        $this->middleware('role.permission:create user')->only('storeByAdmin');
+        $this->middleware('role.permission:show user')->only('show');
+        $this->middleware('role.permission:update user')->only('update');
+        $this->middleware('role.permission:delete user')->only('deleteByAdmin');
     }
+
 
     // Get all users (Superadmin can view all users)
     public function index()

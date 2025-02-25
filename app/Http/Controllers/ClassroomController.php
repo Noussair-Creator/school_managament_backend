@@ -11,12 +11,12 @@ class ClassroomController extends Controller
 {
     // Apply authentication middleware
     public function __construct()
-{
-    // $this->middleware('auth')->only('index', 'show'); // Ensure user is authenticated for general viewing
-    $this->middleware('role.permission:,create classroom')->only('store'); // Only users with permission to create classrooms
-    $this->middleware('role.permission:,update classroom')->only('update'); // Only users with permission to update classrooms
-    $this->middleware('role.permission:,delete classroom')->only('destroy'); // Only users with permission to delete classrooms
-}
+    {
+        $this->middleware('auth'); // Ensure the user is authenticated
+        $this->middleware('role.permission:create classroom')->only('store'); // Only users with "create classroom" permission
+        $this->middleware('role.permission:update classroom')->only('update'); // Only users with "update classroom" permission
+        $this->middleware('role.permission:delete classroom')->only('destroy'); // Only users with "delete classroom" permission
+    }
 
     // List all classrooms
     public function index()
@@ -33,7 +33,7 @@ class ClassroomController extends Controller
         /**
          * @var \App\Models\User
          */
-        if (!Auth::user() || !Auth::user()->hasRole('superadmin')) {
+        if (!Auth::user()) {
             return response()->json(['message' => 'Access denied. Only superadmins can create classrooms.'], 403);
         }
 
