@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class DocumentController extends Controller
 {
-
     // Apply authentication middleware
     public function __construct()
     {
