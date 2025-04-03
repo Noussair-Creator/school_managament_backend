@@ -104,6 +104,6 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
 
 // Authenticated User Information
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return response()->json($request->user());
-});
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return response()->json($request->user());
+// });
