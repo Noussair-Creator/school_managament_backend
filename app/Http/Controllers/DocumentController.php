@@ -1,3 +1,4 @@
+
 <?php
 
 namespace App\Http\Controllers;
@@ -15,6 +16,8 @@ class DocumentController extends Controller
         $this->middleware('auth');
         $this->middleware('role.permission:create document')->only('upload');
         $this->middleware('role.permission:delete document')->only('delete');
+        $this->middleware('role.permission:show document')->only('show');
+        $this->middleware('role.permission:all documents')->only('index');
     }
 
 

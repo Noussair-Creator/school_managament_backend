@@ -74,36 +74,51 @@ Route::middleware('auth:sanctum')->group(function () {
     // ----------------------------------------
     Route::middleware('role.permission:create document')->post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
     Route::middleware('role.permission:delete document')->delete('documents/{documentId}', [DocumentController::class, 'delete'])->name('documents.destroy');
-    Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
-    Route::get('documents/{documentId}', [DocumentController::class, 'show'])->name('documents.show');
-    Route::get('documents/{documentId}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::middleware('role.permission:show document')->get('documents/{documentId}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::middleware('role.permission:show document')->get('documents/{documentId}', [DocumentController::class, 'show'])->name('documents.show');
+    Route::middleware('role.permission:show document')->get('documents', [DocumentController::class, 'index'])->name('documents.index');
 
     // ----------------------------------------
     // Posts & Comments Management
     // ----------------------------------------
-    Route::get('posts', [PostController::class, 'index']);
-    Route::get('posts/{postId}', [PostController::class, 'show']);
-    Route::post('posts', [PostController::class, 'store']);
-    Route::put('posts/{postId}', [PostController::class, 'update']);
-    Route::delete('posts/{postId}', [PostController::class, 'delete']);
+    Route::middleware('role.permission:create post')->post('posts', [PostController::class, 'store'])->name('posts.store');
+    Route::middleware('role.permission:update post')->put('posts/{postId}', [PostController::class, 'update'])->name('posts.update');
+    Route::middleware('role.permission:delete post')->delete('posts/{postId}', [PostController::class, 'delete'])->name('posts.destroy');
+    Route::middleware('role.permission:show post')->get('posts/{postId}', [PostController::class, 'show'])->name('posts.show');
+    Route::middleware('role.permission:show post')->get('posts', [PostController::class, 'index'])->name('posts.index');
 
-    Route::get('posts/{postId}/comments', [CommentController::class, 'showComments']);
-    Route::post('posts/{postId}/comments', [CommentController::class, 'addComment']);
-    Route::put('comments/{commentId}', [CommentController::class, 'updateComment']);
-    Route::delete('comments/{commentId}', [CommentController::class, 'deleteComment']);
+    // Comments Management
 
+    Route::middleware('role.permission:show comment')->get('posts/{postId}/comments', [CommentController::class, 'showComments'])->name('comments.index');
+    Route::middleware('role.permission:create comment')->post('posts/{postId}/comments', [CommentController::class, 'addComment'])->name('comments.store');
+    Route::middleware('role.permission:update comment')->put('comments/{commentId}', [CommentController::class, 'updateComment'])->name('comments.update');
+    Route::middleware('role.permission:delete comment')->delete('comments/{commentId}', [CommentController::class, 'deleteComment'])->name('comments.destroy');
+    Route::middleware('role.permission:show comment')->get('comments/{commentId}', [CommentController::class, 'show'])->name('comments.show');
+    Route::middleware('role.permission:show comment')->get('comments', [CommentController::class, 'index'])->name('comments.index');
     // ----------------------------------------
     // User Profile Management
     // ----------------------------------------
-    Route::get('/profile', [UserController::class, 'profile'])->name('profile.show');
-    Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
+    // User Profile Management
+    Route::middleware('role.permission:show profile')->get('/profile', [UserController::class, 'profile'])->name('profile.show');
+    Route::middleware('role.permission:update profile')->put('/profile', [UserController::class, 'update'])->name('profile.update');
+    Route::middleware('role.permission:delete profile')->delete('/profile', [UserController::class, 'delete'])->name('profile.destroy');
 });
 
 // Public Route for Viewing Classrooms
 Route::get('classrooms', [ClassroomController::class, 'index'])->name('classrooms.index');
 
-// Authenticated User Information
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return response()->json($request->user());
-// });
+// Public Route for Viewing Posts
+
+Route::get('posts', [PostController::class, 'index'])->name('posts.index');
+Route::get('posts/{postId}', [PostController::class, 'show'])->name('posts.show');
+Route::get('posts/{postId}/comments', [CommentController::class, 'showComments'])->name('comments.index');
+
+
+// Public Route for Viewing Documents
+Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
+Route::get('documents/{documentId}', [DocumentController::class, 'show'])->name('documents.show');
+
+
+// Public Route for Viewing Reservations
+Route::get('classrooms/{classroomId}/reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
+

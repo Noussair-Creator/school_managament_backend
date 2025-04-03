@@ -8,6 +8,16 @@ use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
+    // Apply authentication middleware
+    public function __construct()
+    {
+        $this->middleware('auth'); // Ensure user is authenticated
+        $this->middleware('role.permission:create post')->only('store');
+        $this->middleware('role.permission:update post')->only('update');
+        $this->middleware('role.permission:delete post')->only('delete');
+        $this->middleware('role.permission:show post')->only('show');
+        $this->middleware('role.permission:all posts')->only('index');
+    }
     // Show all posts
     public function index()
     {

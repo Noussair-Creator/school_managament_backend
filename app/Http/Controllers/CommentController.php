@@ -8,7 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
+
 {
+    // Apply authentication middleware
+    public function __construct()
+    {
+        $this->middleware('auth'); // Ensure user is authenticated
+        $this->middleware('role.permission:create comment')->only('addComment');
+        $this->middleware('role.permission:update comment')->only('updateComment');
+        $this->middleware('role.permission:delete comment')->only('deleteComment');
+        $this->middleware('role.permission:show comment')->only('showComments');
+    }
     // Show all comments for a post
     public function showComments($postId)
     {
