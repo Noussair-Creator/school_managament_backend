@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role.permission:delete role')->delete('roles/{roleId}', [RoleController::class, 'destroy'])->name('roles.destroy');
     Route::middleware('role.permission:assign role')->post('users/{userId}/assign-role', [RoleController::class, 'assignRole'])->name('roles.assign');
     Route::middleware('role.permission:remove role')->post('users/{userId}/revoke-role', [RoleController::class, 'revokeRole'])->name('roles.revoke');
+    Route::middleware('role.permission:show permission')->get('roles/{roleId}/permissions', [RoleController::class, 'showPermissions'])->name('roles.permissions');
 
     // Assign & Remove Permissions to Roles
     Route::middleware('role.permission:give permissions')->post('roles/{roleId}/assign-permission', [PermissionController::class, 'assignPermissionToRole'])->name('permissions.assign');

@@ -29,6 +29,7 @@ class RoleController extends Controller
     $this->middleware('role.permission:delete permission')->only('revokePermissionFromRole');
     $this->middleware('role.permission:assign role')->only('assignRole');
     $this->middleware('role.permission:remove role')->only('revokeRole');
+
 }
 
 
