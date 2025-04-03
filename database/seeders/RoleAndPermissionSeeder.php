@@ -41,6 +41,20 @@ class RoleAndPermissionSeeder extends Seeder
             'show reservation',
             'update reservation',
             'delete reservation',
+            'create comment',
+            'show comment',
+            'update comment',
+            'delete comment',
+            'create post',
+            'show post',
+            'update post',
+            'delete post',
+            'create document',
+            'show document',
+            'update document',
+            'delete document',
+            'all documents',
+
         ];
 
         // Create permissions if they don't exist

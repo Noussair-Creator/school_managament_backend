@@ -9,6 +9,10 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
+    /**
+        * RoleController constructor.
+        * Apply middleware for role-based access control.
+    **/
     public function __construct()
 {
     $this->middleware('auth');
@@ -25,8 +29,6 @@ class RoleController extends Controller
     $this->middleware('role.permission:delete permission')->only('revokePermissionFromRole');
     $this->middleware('role.permission:assign role')->only('assignRole');
     $this->middleware('role.permission:remove role')->only('revokeRole');
-
-
 }
 
 
