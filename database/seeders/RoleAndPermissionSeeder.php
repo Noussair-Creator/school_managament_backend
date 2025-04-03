@@ -49,6 +49,7 @@ class RoleAndPermissionSeeder extends Seeder
             'show post',
             'update post',
             'delete post',
+            'all posts',
             'create document',
             'show document',
             'update document',

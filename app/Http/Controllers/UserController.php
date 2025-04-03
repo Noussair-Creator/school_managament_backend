@@ -21,6 +21,7 @@ class UserController extends Controller
         $this->middleware('role.permission:show user')->only('show');
         $this->middleware('role.permission:update user')->only('update');
         $this->middleware('role.permission:delete user')->only('deleteByAdmin');
+        $this->middleware('role.permission:all users')->only('index');
     }
 
 

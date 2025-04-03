@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ----------------------------------------
     // User Management
     // ----------------------------------------
+    Route::middleware('role.permission:all users')->get('/users', [UserController::class, 'index'])->name('users.index');
     Route::middleware('role.permission:create user')->post('/users', [UserController::class, 'storeByAdmin'])->name('users.store');
     Route::middleware('role.permission:show user')->get('/users/{userId}', [UserController::class, 'show'])->name('users.show');
     Route::middleware('role.permission:update user')->put('/users/{userId}', [UserController::class, 'update'])->name('users.update');
@@ -87,14 +88,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role.permission:show post')->get('posts/{postId}', [PostController::class, 'show'])->name('posts.show');
     Route::middleware('role.permission:show post')->get('posts', [PostController::class, 'index'])->name('posts.index');
 
+
     // Comments Management
 
     Route::middleware('role.permission:show comment')->get('posts/{postId}/comments', [CommentController::class, 'showComments'])->name('comments.index');
     Route::middleware('role.permission:create comment')->post('posts/{postId}/comments', [CommentController::class, 'addComment'])->name('comments.store');
-    Route::middleware('role.permission:update comment')->put('comments/{commentId}', [CommentController::class, 'updateComment'])->name('comments.update');
-    Route::middleware('role.permission:delete comment')->delete('comments/{commentId}', [CommentController::class, 'deleteComment'])->name('comments.destroy');
-    Route::middleware('role.permission:show comment')->get('comments/{commentId}', [CommentController::class, 'show'])->name('comments.show');
-    Route::middleware('role.permission:show comment')->get('comments', [CommentController::class, 'index'])->name('comments.index');
     // ----------------------------------------
     // User Profile Management
     // ----------------------------------------
