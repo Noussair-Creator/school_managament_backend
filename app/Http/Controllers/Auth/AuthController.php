@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
+
 class AuthController extends Controller
 {
     /**
@@ -16,7 +17,8 @@ class AuthController extends Controller
     {
         // Validate user input
         $validated = $request->validate([
-            'name' => 'required|string',
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
             'email' => 'required|email|unique:users,email', // Ensure email is unique
             'password' => 'required|string|confirmed' // Ensure password confirmation
         ]);
@@ -36,7 +38,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $token,
-            'message' => 'User registered successfully with the guest role'
+            'message' => 'User registered successfully (default role = guest)'
         ], 201);
     }
 
@@ -100,15 +102,14 @@ class AuthController extends Controller
     }
 
 
-        // Method to count active logged-in users
-        public function countLoggedInUsers()
-        {
-            // Count the number of users with non-expired tokens
-            $loggedInUsers = PersonalAccessToken::where('tokenable_type', User::class)
+    // Method to count active logged-in users
+    public function countLoggedInUsers()
+    {
+        // Count the number of users with non-expired tokens
+        $loggedInUsers = PersonalAccessToken::where('tokenable_type', User::class)
             ->distinct('tokenable_id') // Use tokenable_id to count unique users
             ->count('tokenable_id');
 
-            return response()->json(['logged_in_users' => $loggedInUsers]);
-        }
-
+        return response()->json(['logged_in_users' => $loggedInUsers]);
+    }
 }

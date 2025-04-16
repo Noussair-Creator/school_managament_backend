@@ -22,6 +22,7 @@ class UserController extends Controller
         $this->middleware('role.permission:update user')->only('update');
         $this->middleware('role.permission:delete user')->only('deleteByAdmin');
         $this->middleware('role.permission:all users')->only('index');
+        // $this->middleware('role.permission:show profile')->only('profile');
     }
 
 
@@ -169,9 +170,4 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted successfully']);
     }
-
-
-
-
-
 }
