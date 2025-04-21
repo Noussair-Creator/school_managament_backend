@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Comment;
-use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-
+use Illuminate\Support\Facades\Auth; // Use Auth facade
+use Illuminate\Support\Facades\Storage;
+// use Spatie\Permission\Models\Role;
+// use Spatie\Permission\Models\Permission;
+// use App\Models\Comment;
+// use App\Models\Post;
 
 
 class UserController extends Controller
@@ -17,148 +17,194 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role.permission:create user')->only('storeByAdmin');
-        $this->middleware('role.permission:show user')->only('show');
-        $this->middleware('role.permission:update user')->only('update');
+        // Apply middleware using 'role.permission' format based on your custom middleware
+        $this->middleware('role.permission:list users')->only('index');
+        $this->middleware('role.permission:create responsable')->only('createResponsable');
+        $this->middleware('role.permission:show profile')->only('showProfile');
+        $this->middleware('role.permission:update profile')->only('updateProfile');
+        $this->middleware('role.permission:delete profile')->only('deleteProfile');
         $this->middleware('role.permission:delete user')->only('deleteByAdmin');
-        $this->middleware('role.permission:all users')->only('index');
-        // $this->middleware('role.permission:show profile')->only('profile');
+        // $this->middleware('role.permission:show profile')->only('profile'); // Assuming showProfile covers this
     }
 
 
-    // Get all users (Superadmin can view all users)
+    // Get all users (Requires 'list users' permission)
     public function index()
     {
         $users = User::with('roles')->get(); // Eager load roles for each user
-
         return response()->json($users);
     }
 
-    // Show a specific user (Superadmin can view any user)
-    public function show($userId)
+    // Show the authenticated user's profile (Requires 'show profile' permission)
+    public function showProfile()
     {
-        $user = User::with('roles.permissions')->find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-        return response()->json($user);
-    }
-
-    // Update the authenticated user's details (only name, email, and password can be updated)
-    public function update(Request $request)
-    {
-
-        // Validate the incoming data (excluding role validation)
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . Auth::id(),
-            'password' => 'nullable|string|confirmed|min:8', // Password validation (nullable for not updating)
-        ]);
-
-        $user = Auth::user(); // Get the currently authenticated user
-
-        // Update user fields if provided
-        if ($request->has('name')) {
-            $user->name = $validated['name'];
-        }
-        if ($request->has('email')) {
-            $user->email = $validated['email'];
-        }
-        if ($request->has('password')) {
-            $user->password = bcrypt($validated['password']);
-        }
-
-        $user->save(); // Save the updated user
-
+        $user = Auth::user()->load('roles'); // Get the currently logged-in user and load roles
         return response()->json([
-            'message' => 'User updated successfully',
+            'message' => 'Profile fetched successfully',
             'user' => $user
         ]);
     }
 
-    // Delete the authenticated user (self-deletion)
-    public function delete()
+    /**
+     * Update the authenticated user's profile.
+     * Allows optional updates for address, phone, and picture.
+     * (Requires 'update profile' permission)
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateProfile(Request $request)
     {
-        $user = Auth::user(); // Get the currently authenticated user
-        $user->delete(); // Delete the user
-        return response()->json(['message' => 'User deleted successfully']);
-    }
+        // Get the authenticated user
+        $user = Auth::user();
 
-    // Show the authenticated user's profile
-    public function profile()
-    {
-        $user = Auth::user()->load('roles'); // Eager load roles and permissions relationships
+        // Validate the incoming request data
+        // Fields are now optional ('nullable' allows empty/null, 'sometimes' applies rules only if field is present)
+        $validatedData = $request->validate([
+            'address' => 'nullable|string|max:255', // No longer required, allows null/empty
+            'phone'   => 'nullable|string|max:255', // No longer required, allows null/empty
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'picture' => [
+                'sometimes', // Apply rules only if 'picture' is present in the request
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048' // Max 2MB,
+            ],
+            // If you re-add first/last name later:
 
-        return response()->json($user);
-    }
-
-    // Update a user (Superadmin can update any user)
-    public function updateByAdmin(Request $request, $userId)
-    {
-        $this->authorize('update user'); // Ensures the current user has the permission
-
-        $user = User::find($userId);
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $validated = $request->validate([
-            'name' => 'string|max:255',
-            'email' => 'email|unique:users,email,' . $userId,
-            'password' => 'string|confirmed|min:8',
-            'role' => 'nullable|string|exists:roles,name', // Role validation
         ]);
 
-        if ($request->has('name')) {
-            $user->name = $validated['name'];
-        }
-        if ($request->has('email')) {
-            $user->email = $validated['email'];
-        }
-        if ($request->has('password')) {
-            $user->password = bcrypt($validated['password']);
-        }
-        if ($request->has('role')) {
-            $user->syncRoles($validated['role']); // Sync role to the user
+        $oldPicture = $user->picture; // Store old picture path before potential update
+        $pictureUpdated = false;     // Flag to track if a new picture was processed
+        $newPicturePath = null;      // Store path of newly uploaded picture temporarily
+
+        // --- Update Logic ---
+
+        // Update picture if provided and validation passed
+        if ($request->hasFile('picture')) {
+            // Store the new picture
+            $imagePath = $request->file('picture')->store('profile_pictures', 'public');
+
+            // Check if storage was successful
+            if ($imagePath) {
+                $newPicturePath = $imagePath; // Store the new path
+                $user->picture = $newPicturePath; // Tentatively update the user model
+                $pictureUpdated = true;        // Flag that picture was changed
+            } else {
+                // Handle potential storage failure if needed, though 'store' usually throws exceptions on major errors
+                return response()->json(['message' => 'Failed to store profile picture.'], 500);
+            }
         }
 
-        $user->save();
+        // Update other fields only if they are present in the validated data
+        if (array_key_exists('address', $validatedData)) {
+            $user->address = $validatedData['address'];
+        }
 
-        return response()->json([
-            'message' => 'User updated successfully',
-            'user' => $user
-        ]);
+        if (array_key_exists('phone', $validatedData)) {
+            $user->phone = $validatedData['phone'];
+        }
+        if (array_key_exists('first_name', $validatedData)) {
+            $user->first_name = $validatedData['first_name'];
+        }
+        if (array_key_exists('last_name', $validatedData)) {
+            $user->last_name = $validatedData['last_name'];
+        }
+
+        // --- Save and Respond ---
+
+        // Check if any changes were actually made to the model
+        if ($user->isDirty()) { // isDirty() checks if any attributes have changed
+            if ($user->save()) {
+                // Delete the old picture ONLY if a new one was successfully saved
+                if ($pictureUpdated && $oldPicture && Storage::disk('public')->exists($oldPicture)) {
+                    // Make sure not to delete the new picture if old and new paths somehow became the same
+                    if ($oldPicture !== $newPicturePath) {
+                        Storage::disk('public')->delete($oldPicture);
+                    }
+                }
+                return response()->json([
+                    'message' => 'Profile updated successfully',
+                    'user' => $user->fresh()->load('roles'), // Return fresh data with roles
+                ]);
+            } else {
+                // If saving failed, delete the newly uploaded picture (if any) to avoid orphans
+                if ($pictureUpdated && $newPicturePath && Storage::disk('public')->exists($newPicturePath)) {
+                    Storage::disk('public')->delete($newPicturePath);
+                }
+                return response()->json([
+                    'message' => 'Failed to update profile',
+                ], 500);
+            }
+        } else {
+            // No changes were detected
+            return response()->json([
+                'message' => 'No changes detected in the profile data.',
+                'user' => $user->load('roles'), // Return current data with roles
+            ]);
+        }
     }
 
-    // Store a new user by Superadmin (with optional role assignment)
-    public function storeByAdmin(Request $request)
+    // Delete the authenticated user (self-deletion) (Requires 'delete profile' permission)
+    public function deleteProfile()
     {
+        $user = Auth::user();
 
+        // Store path before potentially deleting the user record
+        $picturePath = $user->picture;
+
+        if ($user->delete()) { // Attempt to delete the user first
+            // If user deletion is successful, then delete the profile picture
+            if ($picturePath && Storage::disk('public')->exists($picturePath)) {
+                Storage::disk('public')->delete($picturePath);
+            }
+            // Optionally: Logout the user after deletion if using session/token management
+            // Auth::logout(); or $user->tokens()->delete();
+            return response()->json(['message' => 'Your profile has been deleted successfully']);
+        } else {
+            return response()->json(['message' => 'Failed to delete profile'], 500);
+        }
+    }
+
+    // Store a new user by Admin/Superadmin (Requires 'create responsable' permission)
+    public function createResponsable(Request $request)
+    {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|confirmed|min:8',
-            'role' => 'nullable|string|exists:roles,name', // Role validation for admin, optional
+            // Allowing role specification, defaulting if not provided or invalid permission
+            'role' => 'nullable|string|exists:roles,name',
         ]);
 
         $validated['password'] = bcrypt($validated['password']);
 
+        // Determine the role
+        // Default to 'responsable_labo', but allow override if 'role' is provided and valid
+        $roleName = $validated['role'] ?? 'responsable_labo';
+        unset($validated['role']); // Remove role from data going directly into User::create
+
         $user = User::create($validated);
 
-        // Assign the role (if provided) or default to 'guest' if no role is provided
-        $role = $validated['role'] ?? 'guest';  // Default to 'guest' if no role provided
-        $user->assignRole($role);
+        // Assign the determined role
+        // Consider adding a check here if the creator *can* assign the requested role
+        $user->assignRole($roleName);
 
         return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user
+            'message' => 'User created successfully with role: ' . $roleName,
+            'user' => $user->load('roles') // Return user with roles loaded
         ], 201);
     }
 
-    // Delete a user (Superadmin can delete any user)
+    // Delete a user by Admin/Superadmin (Requires 'delete user' permission)
     public function deleteByAdmin($userId)
     {
+        // Prevent admin from deleting themselves using this route
+        if (Auth::id() == $userId) {
+            return response()->json(['message' => 'You cannot delete your own account using this method. Use the profile delete option.'], 403);
+        }
 
         $user = User::find($userId);
 
@@ -166,8 +212,29 @@ class UserController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        $user->delete();
+        // Optional: Add checks here - e.g., prevent deleting the last superadmin
 
-        return response()->json(['message' => 'User deleted successfully']);
+        $picturePath = $user->picture; // Store path before deletion
+
+        if ($user->delete()) { // Attempt delete
+            // Delete picture after successful user deletion
+            if ($picturePath && Storage::disk('public')->exists($picturePath)) {
+                Storage::disk('public')->delete($picturePath);
+            }
+            // Optionally detach roles/permissions if delete event doesn't handle it
+            // $user->syncRoles([]);
+            return response()->json(['message' => 'User deleted successfully']);
+        } else {
+            return response()->json(['message' => 'Failed to delete user'], 500);
+        }
     }
+
+    // Commented out unused/example methods from original code
+    // public function profile()
+    // {
+    //     $user = Auth::user()->load('roles'); // Eager load roles and permissions relationships
+    //     return response()->json($user);
+    // }
+    // public function updateByAdmin(Request $request, $userId) { ... }
+
 }

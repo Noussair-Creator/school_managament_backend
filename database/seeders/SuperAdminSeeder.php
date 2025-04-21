@@ -13,6 +13,9 @@ class SuperAdminSeeder extends Seeder
     {
         // Ensure the Superadmin role exists
         $superAdminRole = Role::firstOrCreate(['name' => 'superadmin']);
+        $teacherRole = Role::firstOrCreate(['name' => 'teacher']);
+        $responsableLaboRole = Role::firstOrCreate(['name' => 'responsable_labo']);
+
 
         // Create Superadmin user
         $superAdmin = User::firstOrCreate([
@@ -27,5 +30,31 @@ class SuperAdminSeeder extends Seeder
         $superAdmin->assignRole($superAdminRole);
 
         $this->command->info('Superadmin user seeded successfully.');
+        // Create Superadmin user
+        $teacher = User::firstOrCreate([
+            'email' => 'teacher@example.com',
+        ], [
+            'first_name' => 'teacher',
+            'last_name' => 'one',
+            'password' => Hash::make('teacher@example.com'), // Change this to a more secure password
+        ]);
+
+        // Assign the Superadmin role
+        $teacher->assignRole($teacherRole);
+        $this->command->info('teacher seeded successfully.');
+
+        // Create Superadmin user
+        $responsableLabo = User::firstOrCreate([
+            'email' => 'responsableLabo@example.com',
+        ], [
+            'first_name' => 'responsableLabo',
+            'last_name' => 'one',
+            'password' => Hash::make('responsableLabo@example.com'), // Change this to a more secure password
+        ]);
+
+        // Assign the Superadmin role
+        $responsableLabo->assignRole($responsableLaboRole);
+
+        $this->command->info('responsableLabo seeded successfully.');
     }
-}
+};

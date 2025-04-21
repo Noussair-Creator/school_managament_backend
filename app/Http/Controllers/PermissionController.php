@@ -12,12 +12,13 @@ class PermissionController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role.permission:create permission')->only('store');
+        $this->middleware('role.permission:list permissions')->only('index');
+        // $this->middleware('role.permission:create permission')->only('store');
         $this->middleware('role.permission:show permission')->only('show');
         $this->middleware('role.permission:update permission')->only('update');
         $this->middleware('role.permission:delete permission')->only('destroy');
-        $this->middleware('role.permission:give permissions')->only('assignPermissionToRole');
-        $this->middleware('role.permission:remove permissions')->only('revokePermissionFromRole');
+        // $this->middleware('role.permission:give permissions')->only('assignPermissionToRole');
+        // $this->middleware('role.permission:remove permissions')->only('revokePermissionFromRole');
     }
 
 
@@ -96,52 +97,63 @@ class PermissionController extends Controller
         return response()->json(['message' => 'Permission deleted successfully']);
     }
 
-    public function assignPermissionToRole(Request $request, $roleId)
-    {
-        // Find the role by ID
-        $role = Role::find($roleId);
+    // public function assignPermissionToRole(Request $request, $roleId)
+    // {
+    //     // Find the role by ID
+    //     $role = Role::find($roleId);
 
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
+    //     if (!$role) {
+    //         return response()->json(['message' => 'Role not found'], 404);
+    //     }
 
-        // Validate the incoming request, allowing multiple permissions
-        $validated = $request->validate([
-            'permissions' => 'required|array', // Ensures that permissions is an array
-            'permissions.*' => 'string|exists:permissions,name', // Ensures each permission is valid
-        ]);
+    //     // Validate the incoming request, allowing multiple permissions
+    //     $validated = $request->validate([
+    //         'permissions' => 'required|array', // Ensures that permissions is an array
+    //         'permissions.*' => 'string|exists:permissions,name', // Ensures each permission is valid
+    //     ]);
 
-        // Assign the multiple permissions to the role
-        $role->givePermissionTo($validated['permissions']);
+    //     // Assign the multiple permissions to the role
+    //     $role->givePermissionTo($validated['permissions']);
 
-        return response()->json([
-            'message' => 'Permissions assigned to role successfully',
-            'role' => $role
-        ]);
-    }
+    //     return response()->json([
+    //         'message' => 'Permissions assigned to role successfully',
+    //         'role' => $role
+    //     ]);
+    // }
 
 
-    // Revoke a permission from a role
-    public function revokePermissionFromRole(Request $request, $roleId)
-    {
-        $role = Role::find($roleId);
+    // // Revoke a permission from a role
+    // public function revokePermissionFromRole(Request $request, $roleId)
+    // {
+    //     $role = Role::find($roleId);
 
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
+    //     if (!$role) {
+    //         return response()->json(['message' => 'Role not found'], 404);
+    //     }
 
-        $validated = $request->validate([
-            'permission' => 'required|string|exists:permissions,name',
-        ]);
+    //     $validated = $request->validate([
+    //         'permission' => 'required|string|exists:permissions,name',
+    //     ]);
 
-        // Revoke the permission from the role
-        $role->revokePermissionTo($validated['permission']);
+    //     // Revoke the permission from the role
+    //     $role->revokePermissionTo($validated['permission']);
 
-        return response()->json([
-            'message' => 'Permission revoked from role successfully',
-            'role' => $role
-        ]);
-    }
+    //     return response()->json([
+    //         'message' => 'Permission revoked from role successfully',
+    //         'role' => $role
+    //     ]);
+    // }
+
+
+
+
+
+
+
+
+
+
+
 
     // Uncomment below methods to assign/revoke permissions for users (if needed)
 

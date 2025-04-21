@@ -30,7 +30,7 @@ class AuthController extends Controller
         $user = User::create($validated);
 
         // Assign a default "guest" role to the user
-        $user->assignRole('guest');
+        $user->assignRole('eleve');
 
         // Generate a token for the user
         $token = $user->createToken($request->email)->plainTextToken;

@@ -103,7 +103,8 @@ class DocumentController extends Controller
     }
 
 
-    public function show($documentId){
+    public function show($documentId)
+    {
         $document = Document::find($documentId);
 
         if (!$document) {
