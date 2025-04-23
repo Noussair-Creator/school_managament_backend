@@ -19,14 +19,14 @@ class MaterialController extends Controller
     public function __construct()
     {
         // Apply authentication (except potentially for public viewing)
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
+        // $this->middleware('auth:sanctum')->except(['index', 'show']);
 
         // Apply permission checks for modification actions
         // Use 'manage materials' or create granular permissions (create, update, delete)
         $this->middleware('role.permission:manage materials')->only(['store', 'update', 'destroy']);
 
         // Optional: If index/show should also require a permission (e.g., 'list materials')
-        // $this->middleware('role.permission:list materials')->only(['index', 'show']);
+        $this->middleware('role.permission:list materials')->only(['index', 'show']);
     }
 
     /**

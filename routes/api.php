@@ -1,135 +1,139 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // --- Controller Imports ---
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\LocationController;
-use App\Http\Controllers\ReservationsController;
-use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\MaterialController; // <-- Added MaterialController
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ReservationsController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - Public
+| API Routes
 |--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+| Note: Authentication is handled via Sanctum tokens (Bearer).
+| Permissions are assumed to be handled within controller constructors or methods.
+|
 */
 
-// Authentication
-Route::post('register', [AuthController::class, 'register'])->name('register');
+// ========================================
+// Public Routes (No Authentication Required)
+// ========================================
+
+// --- Authentication ---
+Route::post('register', [AuthController::class, 'register'])->name('register'); // Student
+Route::post('register/lab-manager', [AuthController::class, 'registerResponsable'])->name('register.labmanager');
+Route::post('register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher');
 Route::post('login', [AuthController::class, 'login'])->name('login');
 
-// Public Viewing: Locations
-Route::get('locations', [LocationController::class, 'index'])->name('locations.index');
-Route::get('locations/{location}', [LocationController::class, 'show'])->name('locations.show');
+// --- Public Viewing (Optional - Enable if needed) ---
+// Uncomment these if you need unauthenticated access to view these resources.
+// Ensure controllers handle lack of auth if uncommented.
+// Route::get('locations', [LocationController::class, 'indexPublic'])->name('public.locations.index'); // Use different controller methods if needed
+// Route::get('locations/{location}', [LocationController::class, 'showPublic'])->name('public.locations.show');
+// Route::get('materials', [MaterialController::class, 'indexPublic'])->name('public.materials.index');
+// Route::get('materials/{material}', [MaterialController::class, 'showPublic'])->name('public.materials.show');
+// Route::get('posts', [PostController::class, 'indexPublic'])->name('public.posts.index'); // Assuming separate public methods if needed
+// Route::get('posts/{post}', [PostController::class, 'showPublic'])->name('public.posts.show');
+// Route::get('posts/{post}/comments', [CommentController::class, 'indexPublic'])->name('public.comments.index');
+// Route::get('documents', [DocumentController::class, 'indexPublic'])->name('public.documents.index');
+// Route::get('documents/{document}', [DocumentController::class, 'showPublic'])->name('public.documents.show');
 
-// Public Viewing: Materials (Optional - uncomment if needed)
-// Route::get('materials', [MaterialController::class, 'index'])->name('materials.index.public');
-// Route::get('materials/{material}', [MaterialController::class, 'show'])->name('materials.show.public');
 
-// Public Viewing: Posts & Comments
-Route::get('posts', [PostController::class, 'index'])->name('posts.index.public');
-Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show.public');
-Route::get('posts/{post}/comments', [CommentController::class, 'showComments'])->name('comments.index.public');
-
-// Public Viewing: Documents
-Route::get('documents', [DocumentController::class, 'index'])->name('documents.index.public');
-Route::get('documents/{document}', [DocumentController::class, 'show'])->name('documents.show.public');
-
-// Optional Public Viewing: Reservations for a Location
-// Route::get('locations/{location}/reservations', [ReservationsController::class, 'listPublicReservationsForLocation'])->name('locations.reservations.index.public');
-
-/*
-|--------------------------------------------------------------------------
-| API Routes - Authenticated (via Sanctum)
-|--------------------------------------------------------------------------
-| Permissions are handled within each controller's __construct method.
-*/
+// ==================================================
+// Authenticated Routes (Require 'auth:sanctum' Token)
+// ==================================================
 Route::middleware('auth:sanctum')->group(function () {
 
     // --- Authentication ---
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/logged-in-users', [AuthController::class, 'countLoggedInUsers'])->name('auth.logged-in.count');
+    Route::get('user', [AuthController::class, 'user'])->name('user.show'); // Renamed route name slightly
+    // --- User Profile (Self) ---
+    Route::get('profile', [UserController::class, 'showProfile'])->name('profile.show');
+    Route::post('profile', [UserController::class, 'updateProfile'])->name('profile.update'); // Use POST for updates with potential file uploads or PUT/PATCH otherwise
+    Route::delete('profile', [UserController::class, 'deleteProfile'])->name('profile.delete');
 
-    // --- Role Management ---
-    Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
-    Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('roles/{role}', [RoleController::class, 'show'])->name('roles.show');
-    Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
-    Route::get('roles/{role}/permissions', [RoleController::class, 'showPermissions'])->name('roles.permissions');
+    // --- Notification Routes ---
+    Route::get('/notifications', [NotificationController::class, 'index']); // Get notifications
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']); // Mark all as read
+    Route::patch('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead']); // Mark specific as read (use PATCH or POST)
+    Route::delete('/notifications/{notificationId}', [NotificationController::class, 'destroy']); // Delete specific notification
 
-    // --- Role Permissions ---
-    Route::post('roles/{role}/assign-permission', [PermissionController::class, 'assignPermissionToRole'])->name('permissions.assign.role');
-    Route::post('roles/{role}/revoke-permission', [PermissionController::class, 'revokePermissionFromRole'])->name('permissions.revoke.role');
 
-    // --- User Roles ---
-    Route::post('users/{user}/assign-role', [RoleController::class, 'assignRole'])->name('roles.assign.user');
-    Route::post('users/{user}/revoke-role', [RoleController::class, 'revokeRole'])->name('roles.revoke.user');
+    // --- User Management (Admin/Specific Roles) ---
+    // Using apiResource for standard index/show/update/destroy if applicable
+    // If only index/destroy are needed:
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    // Route::get('users/{user}', [UserController::class, 'show'])->name('users.show'); // Add if needed
+    // Route::put('users/{user}', [UserController::class, 'update'])->name('users.update'); // Add if needed
+    Route::delete('users/{user}', [UserController::class, 'deleteByAdmin'])->name('users.destroy');
+    // Keep specific actions separate if they don't fit resource pattern
+    Route::post('users/responsable', [UserController::class, 'createResponsable'])->name('users.responsable.store'); // More specific name
 
-    // --- Permissions Management ---
-    Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
-    Route::post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
-    Route::put('permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
-    Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+    // --- Roles & Permissions Management ---
+    Route::apiResource('roles', RoleController::class); // index, store, show, update, destroy
+    Route::get('roles/{role}/permissions', [RoleController::class, 'showPermissions'])->name('roles.permissions.index');
+    Route::post('roles/{role}/permissions', [PermissionController::class, 'assignPermissionToRole'])->name('roles.permissions.assign'); // Changed path slightly for consistency
+    Route::delete('roles/{role}/permissions', [PermissionController::class, 'revokePermissionFromRole'])->name('roles.permissions.revoke'); // Changed path slightly & method to DELETE
 
-    // --- User Management ---
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::post('/responsable', [UserController::class, 'createResponsable'])->name('responsable.store');
-    Route::delete('/users/{user}', [UserController::class, 'deleteByAdmin'])->name('users.destroy');
+    Route::apiResource('permissions', PermissionController::class); // index, store, show, update, destroy
 
-    // --- Profile Management (Self) ---
-    Route::get('/profile', [UserController::class, 'showProfile'])->name('profile.show');
-    Route::post('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
-    Route::delete('/profile', [UserController::class, 'deleteProfile'])->name('profile.delete');
+    // Assign/Revoke Roles for specific Users
+    Route::post('users/{user}/roles', [RoleController::class, 'assignRole'])->name('users.roles.assign'); // Changed path slightly
+    Route::delete('users/{user}/roles', [RoleController::class, 'revokeRole'])->name('users.roles.revoke'); // Changed path slightly & method to DELETE
 
     // --- Location Management ---
-    // Permissions handled in LocationController constructor
-    Route::post('locations', [LocationController::class, 'store'])->name('locations.store');
-    Route::put('locations/{location}', [LocationController::class, 'update'])->name('locations.update');
-    Route::delete('locations/{location}', [LocationController::class, 'destroy'])->name('locations.destroy');
+    // *** FIX: Use apiResource to include GET /locations ***
+    // Assumes LocationController has index, store, show, update, destroy methods
+    Route::apiResource('locations', LocationController::class);
 
-    // --- Material Management --- // <-- Added Section
-    // Permissions (e.g., 'manage materials') handled in MaterialController constructor
-    // Provides routes for index, store, show, update, destroy
+    // --- Material Management ---
+    // apiResource correctly defines GET/POST/PUT/DELETE/GET{id} for materials
     Route::apiResource('materials', MaterialController::class);
 
     // --- Reservations Management ---
-    // Permissions handled in ReservationsController constructor
-    Route::post('/locations/{location}/reservations', [ReservationsController::class, 'makeReservation'])->name('locations.reservations.store');
-    Route::get('/reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
-    Route::put('/reservations/{reservation}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
-    Route::delete('/reservations/{reservation}', [ReservationsController::class, 'cancelReservation'])->name('reservations.destroy'); // Note: This now cancels, doesn't delete row
-
-    // --- Reservation Approval/Rejection --- // <-- Added Section
-    // Permissions ('approve reservation') handled in ReservationsController constructor
-    Route::post('/reservations/{reservation}/approve', [ReservationsController::class, 'approve'])
-        ->name('reservations.approve');
-    Route::post('/reservations/{reservation}/reject', [ReservationsController::class, 'reject'])
-        ->name('reservations.reject');
+    Route::post('locations/{location}/reservations', [ReservationsController::class, 'makeReservation'])->name('locations.reservations.store');
+    Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
+    // Route::get('reservations/{reservation}', [ReservationsController::class, 'show'])->name('reservations.show'); // Add if needed
+    Route::put('reservations/{reservation}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
+    Route::delete('reservations/{reservation}', [ReservationsController::class, 'cancelReservation'])->name('reservations.destroy');
+    // Reservation Approval/Rejection
+    Route::post('reservations/{reservation}/approve', [ReservationsController::class, 'approve'])->name('reservations.approve');
+    Route::post('reservations/{reservation}/reject', [ReservationsController::class, 'reject'])->name('reservations.reject');
 
     // --- Documents Management ---
-    // Permissions handled in DocumentController constructor
     Route::post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');
     Route::delete('documents/{document}', [DocumentController::class, 'delete'])->name('documents.destroy');
     Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    // Missing routes for listing/viewing documents if needed within authenticated context?
+    // Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
+    // Route::get('documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
 
     // --- Posts Management ---
-    // Permissions handled in PostController constructor
     Route::post('posts', [PostController::class, 'store'])->name('posts.store');
+    // Route::get('posts', [PostController::class, 'index'])->name('posts.index'); // Add if needed
+    // Route::get('posts/{post}', [PostController::class, 'show'])->name('posts.show'); // Add if needed
     Route::put('posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('posts/{post}', [PostController::class, 'delete'])->name('posts.destroy');
 
     // --- Comments Management ---
-    // Permissions handled in CommentController constructor
     Route::post('posts/{post}/comments', [CommentController::class, 'addComment'])->name('comments.store');
-});
+    // Add routes for updating/deleting comments if needed
+    // Route::put('comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    // Route::delete('comments/{comment}', [CommentController::class, 'delete'])->name('comments.destroy');
 
-// Ensure removed sections are kept out or deleted
-// /* ... REMOVED/REPLACED SECTIONS ... */
+}); // End of auth:sanctum middleware group

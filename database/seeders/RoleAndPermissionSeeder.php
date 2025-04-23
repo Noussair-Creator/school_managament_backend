@@ -39,6 +39,7 @@ class RoleAndPermissionSeeder extends Seeder
             'list users',
             'create user', // Generic user creation
             'create responsable', // Specific user creation (if different logic)
+            'create teacher', //
             'show user', // View user details
             'update user', // Admin update any user
             'delete user', // Admin delete any user

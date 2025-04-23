@@ -17,14 +17,10 @@ class LocationController extends Controller
      */
     public function __construct()
     {
-        // --- Apply Authentication Middleware ---
-        // Apply Sanctum authentication ONLY to methods that require a logged-in user.
-        // 'index' and 'show' are public.
-        $this->middleware('auth:sanctum')->except(['index', 'show']);
 
-        // --- Apply Permission Middleware ---
-        // Apply specific permission checks ONLY to the methods requiring them.
-        // Assumes you have a middleware named 'role.permission' that takes the permission name.
+
+        // $this->middleware('auth:sanctum')->except(['index', 'show']);
+
 
         // Permission for creating locations
         $this->middleware('role.permission:create location')->only('store');
@@ -35,9 +31,8 @@ class LocationController extends Controller
         // Permission for deleting locations
         $this->middleware('role.permission:delete location')->only('destroy');
 
-        // Permissions for viewing (if they were restricted)
-        // $this->middleware('role.permission:list locations')->only('index'); // Uncomment if index needs permission
-        // $this->middleware('role.permission:show location')->only('show');   // Uncomment if show needs permission
+        $this->middleware('role.permission:list locations')->only('index'); // Uncomment if index needs permission
+        $this->middleware('role.permission:show location')->only('show');   // Uncomment if show needs permission
     }
 
     /**

@@ -19,7 +19,8 @@ class UserController extends Controller
         $this->middleware('auth');
         // Apply middleware using 'role.permission' format based on your custom middleware
         $this->middleware('role.permission:list users')->only('index');
-        $this->middleware('role.permission:create responsable')->only('createResponsable');
+        // $this->middleware('role.permission:create responsable')->only('createResponsable');
+        // $this->middleware('role.permission:create teacher')->only('createTeacher');
         $this->middleware('role.permission:show profile')->only('showProfile');
         $this->middleware('role.permission:update profile')->only('updateProfile');
         $this->middleware('role.permission:delete profile')->only('deleteProfile');
@@ -167,37 +168,6 @@ class UserController extends Controller
         }
     }
 
-    // Store a new user by Admin/Superadmin (Requires 'create responsable' permission)
-    public function createResponsable(Request $request)
-    {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|confirmed|min:8',
-            // Allowing role specification, defaulting if not provided or invalid permission
-            'role' => 'nullable|string|exists:roles,name',
-        ]);
-
-        $validated['password'] = bcrypt($validated['password']);
-
-        // Determine the role
-        // Default to 'responsable_labo', but allow override if 'role' is provided and valid
-        $roleName = $validated['role'] ?? 'responsable_labo';
-        unset($validated['role']); // Remove role from data going directly into User::create
-
-        $user = User::create($validated);
-
-        // Assign the determined role
-        // Consider adding a check here if the creator *can* assign the requested role
-        $user->assignRole($roleName);
-
-        return response()->json([
-            'message' => 'User created successfully with role: ' . $roleName,
-            'user' => $user->load('roles') // Return user with roles loaded
-        ], 201);
-    }
-
     // Delete a user by Admin/Superadmin (Requires 'delete user' permission)
     public function deleteByAdmin($userId)
     {
@@ -228,13 +198,4 @@ class UserController extends Controller
             return response()->json(['message' => 'Failed to delete user'], 500);
         }
     }
-
-    // Commented out unused/example methods from original code
-    // public function profile()
-    // {
-    //     $user = Auth::user()->load('roles'); // Eager load roles and permissions relationships
-    //     return response()->json($user);
-    // }
-    // public function updateByAdmin(Request $request, $userId) { ... }
-
 }

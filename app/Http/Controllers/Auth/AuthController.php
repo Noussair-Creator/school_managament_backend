@@ -2,114 +2,189 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
+use App\Events\UserRegistered; // Import the custom event
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log; // <-- Added missing import
 
 class AuthController extends Controller
 {
     /**
-     * User registration method.
+     * User registration method (Role: eleve).
+     * Does NOT dispatch UserRegistered event by default.
      */
     public function register(Request $request)
     {
-        // Validate user input
         $validated = $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|email|unique:users,email', // Ensure email is unique
-            'password' => 'required|string|confirmed' // Ensure password confirmation
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|confirmed|min:8',
         ]);
 
-        // Hash the password before saving
         $validated['password'] = Hash::make($validated['password']);
 
-        // Create the user in the database
         $user = User::create($validated);
+        $user->assignRole('eleve'); // Ensure 'eleve' role exists
 
-        // Assign a default "guest" role to the user
-        $user->assignRole('eleve');
+        // NOTE: UserRegistered event is NOT dispatched for 'eleve' role here.
+        // If notifications are needed, dispatch the event:
+        // try { UserRegistered::dispatch($user); } catch (\Exception $e) { Log::error(...) }
 
-        // Generate a token for the user
-        $token = $user->createToken($request->email)->plainTextToken;
+        $user->load('roles:name');
+        $token = $user->createToken($request->email ?? 'register-token-eleve')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
-            'message' => 'User registered successfully (default role = guest)'
+            'message' => 'User registered successfully (role = eleve)'
         ], 201);
     }
 
     /**
-     * User login method.
+     * Teacher registration method (Role: teacher).
+     * Dispatches UserRegistered event.
      */
-    public function login(Request $request)
+    public function registerTeacher(Request $request)
     {
-        // Validate the login input
         $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string'
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|confirmed|min:8',
         ]);
 
-        // Find the user by email
-        $user = User::where('email', $validated['email'])->first();
+        $validated['password'] = Hash::make($validated['password']);
+        $user = User::create($validated);
 
-        // Check if the user exists and if the password matches
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+        // --- Ensure this role name matches what the Listener checks ---
+        $user->assignRole('teacher'); // Ensure 'teacher' role exists and matches listener check
+
+        // --- Dispatch the UserRegistered Event ---
+        try {
+            Log::info("Attempting to dispatch UserRegistered for Teacher: " . $user->email); // Optional: More detailed logging
+            UserRegistered::dispatch($user);
+            Log::info("Dispatched UserRegistered successfully for Teacher: " . $user->email); // Optional: Success logging
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch UserRegistered event for Teacher {$user->email}: " . $e->getMessage());
         }
+        // --- End Event Dispatch ---
 
-        // Revoke any old tokens (optional, to prevent multiple active sessions)
-        $user->tokens()->delete();
-
-        // Create a new token
-        $token = $user->createToken($request->email);
-        // Token will be automatically saved in the 'personal_access_tokens' table, including tokenable_type and tokenable_id
+        $user->load('roles:name');
+        $token = $user->createToken($request->email ?? 'register-token-teacher')->plainTextToken;
 
         return response()->json([
             'user' => $user,
-            'token' => $token->plainTextToken,
-            'message' => 'User logged in successfully'
-        ]);
+            'token' => $token,
+            'message' => 'Teacher registered successfully (role = teacher)'
+        ], 201);
     }
 
+    /**
+     * Lab Manager registration method (Role: Lab Manager).
+     * Dispatches UserRegistered event.
+     */
+    public function registerResponsable(Request $request) // Consider renaming to registerLabManager for clarity
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|confirmed|min:8',
+        ]);
 
+        $validated['password'] = Hash::make($validated['password']);
+        $user = User::create($validated);
+
+        // --- Ensure this role name matches what the Listener checks ---
+        $user->assignRole('responsable_labo'); // Ensure 'Lab Manager' role exists and matches listener check
+
+        // --- Dispatch the UserRegistered Event ---
+        try {
+            Log::info("Attempting to dispatch UserRegistered for Lab Manager: " . $user->email); // Optional logging
+            UserRegistered::dispatch($user);
+            Log::info("Dispatched UserRegistered successfully for Lab Manager: " . $user->email); // Optional logging
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch UserRegistered event for Lab Manager {$user->email}: " . $e->getMessage());
+        }
+        // --- End Event Dispatch ---
+
+        $user->load('roles:name');
+        $token = $user->createToken($request->email ?? 'register-token-labmanager')->plainTextToken; // Changed default name
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+            'message' => 'Lab Manager registered successfully (role = Lab Manager)'
+        ], 201);
+    }
 
     /**
-     * User logout method.
+     * User login method (API Token Authentication).
+     */
+    public function login(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string'
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return response()->json(['message' => __('auth.failed')], 401);
+        }
+
+        // Load roles before returning
+        $user->load('roles:name');
+
+        // Optional: Revoke all old tokens for this user upon new login
+        // $user->tokens()->delete();
+
+        // Create a new token
+        $token = $user->createToken($request->email ?? 'login-token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+            'message' => 'User logged in successfully'
+        ]); // Default status 200 OK
+    }
+
+    /**
+     * User logout method (API Token Authentication).
+     * NOTE: Route must be protected by 'auth:sanctum' middleware.
      */
     public function logout(Request $request)
     {
-        // Get the authenticated user
-        $user = $request->user();
+        $user = $request->user(); // Get user via token + middleware
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'No authenticated user found.'
-            ], 401);
+        if ($user) {
+            // Revoke only the token used for this request
+            $user->currentAccessToken()->delete();
+            return response()->json(['message' => 'User logged out successfully']);
         }
 
-        // Revoke all tokens for the user
-        $user->tokens()->delete();
-
-        return response()->json([
-            'message' => 'User logged out successfully'
-        ], 200);
+        return response()->json(['message' => 'No authenticated user session found.'], 401);
     }
 
-
-    // Method to count active logged-in users
-    public function countLoggedInUsers()
+    /**
+     * Get the authenticated user (API Token Auth).
+     * NOTE: Route must be protected by 'auth:sanctum' middleware.
+     */
+    public function user(Request $request)
     {
-        // Count the number of users with non-expired tokens
-        $loggedInUsers = PersonalAccessToken::where('tokenable_type', User::class)
-            ->distinct('tokenable_id') // Use tokenable_id to count unique users
-            ->count('tokenable_id');
+        $user = $request->user(); // Get user via token + middleware
 
-        return response()->json(['logged_in_users' => $loggedInUsers]);
+        if ($user) {
+            // Load roles before returning
+            $user->load('roles:name');
+            return response()->json($user);
+        }
+
+        // Should not be reached if middleware is applied correctly
+        return response()->json(['message' => 'Unauthenticated.'], 401);
     }
 }

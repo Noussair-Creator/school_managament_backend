@@ -60,4 +60,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class);
     }
+
+
+
+    // // notifications relationships
+    // public function notifications()
+    // {
+    //     return $this->hasMany(DatabaseNotification::class)
+    //         ->orderBy('created_at', 'desc');
+    // }
+
+    // /**
+    //  * Get the user's unread notifications.
+    //  */
+    // public function unreadNotifications()
+    // {
+    //     return $this->notifications()->whereNull('read_at');
+    // }
 }

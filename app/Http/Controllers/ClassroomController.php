@@ -14,6 +14,7 @@ class ClassroomController extends Controller
     {
         $this->middleware('auth'); // Ensure the user is authenticated
         $this->middleware('role.permission:create classroom')->only('store'); // Only users with "create classroom" permission
+        $this->middleware('role.permission:list classroom')->only('index'); // Only users with "create classroom" permission
         $this->middleware('role.permission:update classroom')->only('update'); // Only users with "update classroom" permission
         $this->middleware('role.permission:delete classroom')->only('destroy'); // Only users with "delete classroom" permission
     }
