@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Reservation; // <--- Corrected/Added import
 
 class User extends Authenticatable
 {
@@ -61,6 +62,30 @@ class User extends Authenticatable
         return $this->hasMany(Comment::class);
     }
 
+    // Reservations MADE BY this user (Teacher)
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    // Reservations ACTIONED BY this user (Lab Manager)
+    public function approvedReservations()
+    {
+        return $this->hasMany(Reservation::class, 'approved_by');
+    }
+
+
+    // Helper function to check if the user is a teacher
+    public function isTeacher()
+    {
+        return $this->hasRole('teacher');
+    }
+
+    // Helper function to check if the user is a lab manager
+    public function isLabManager()
+    {
+        return $this->hasRole('lab-manager'); // Assumes role name is 'lab-manager'
+    }
 
 
     // // notifications relationships

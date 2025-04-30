@@ -12,9 +12,11 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PostController;
-use App\Http\Controllers\ReservationsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReservationController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +41,7 @@ Route::post('register', [AuthController::class, 'register'])->name('register'); 
 Route::post('register/lab-manager', [AuthController::class, 'registerResponsable'])->name('register.labmanager');
 Route::post('register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher');
 Route::post('login', [AuthController::class, 'login'])->name('login');
-
+Route::apiResource('locations', LocationController::class);
 // --- Public Viewing (Optional - Enable if needed) ---
 // Uncomment these if you need unauthenticated access to view these resources.
 // Ensure controllers handle lack of auth if uncommented.
@@ -52,6 +54,14 @@ Route::post('login', [AuthController::class, 'login'])->name('login');
 // Route::get('posts/{post}/comments', [CommentController::class, 'indexPublic'])->name('public.comments.index');
 // Route::get('documents', [DocumentController::class, 'indexPublic'])->name('public.documents.index');
 // Route::get('documents/{document}', [DocumentController::class, 'showPublic'])->name('public.documents.show');
+
+
+
+
+Route::resource('reservations', ReservationController::class);
+Route::post('reservations/{reservation}/approve', [ReservationController::class, 'approveOrReject']);
+Route::get('reservations/search', [ReservationController::class, 'search']);
+
 
 
 // ==================================================
@@ -99,21 +109,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- Location Management ---
     // *** FIX: Use apiResource to include GET /locations ***
     // Assumes LocationController has index, store, show, update, destroy methods
-    Route::apiResource('locations', LocationController::class);
+    // Route::apiResource('locations', LocationController::class);
 
     // --- Material Management ---
     // apiResource correctly defines GET/POST/PUT/DELETE/GET{id} for materials
     Route::apiResource('materials', MaterialController::class);
 
-    // --- Reservations Management ---
-    Route::post('locations/{location}/reservations', [ReservationsController::class, 'makeReservation'])->name('locations.reservations.store');
-    Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
-    // Route::get('reservations/{reservation}', [ReservationsController::class, 'show'])->name('reservations.show'); // Add if needed
-    Route::put('reservations/{reservation}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
-    Route::delete('reservations/{reservation}', [ReservationsController::class, 'cancelReservation'])->name('reservations.destroy');
-    // Reservation Approval/Rejection
-    Route::post('reservations/{reservation}/approve', [ReservationsController::class, 'approve'])->name('reservations.approve');
-    Route::post('reservations/{reservation}/reject', [ReservationsController::class, 'reject'])->name('reservations.reject');
+    // // --- Reservations Management ---
+    // Route::post('locations/{location}/reservations', [ReservationsController::class, 'makeReservation'])->name('locations.reservations.store');
+    // Route::get('reservations', [ReservationsController::class, 'listReservations'])->name('reservations.index');
+    // // Route::get('reservations/{reservation}', [ReservationsController::class, 'show'])->name('reservations.show'); // Add if needed
+    // Route::put('reservations/{reservation}', [ReservationsController::class, 'updateReservation'])->name('reservations.update');
+    // Route::delete('reservations/{reservation}', [ReservationsController::class, 'cancelReservation'])->name('reservations.destroy');
+    // // Reservation Approval/Rejection
+    // Route::post('reservations/{reservation}/approve', [ReservationsController::class, 'approve'])->name('reservations.approve');
+    // Route::post('reservations/{reservation}/reject', [ReservationsController::class, 'reject'])->name('reservations.reject');
+
+
+
+
 
     // --- Documents Management ---
     Route::post('documents/upload', [DocumentController::class, 'upload'])->name('documents.upload');

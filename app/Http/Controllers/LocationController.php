@@ -31,7 +31,7 @@ class LocationController extends Controller
         // Permission for deleting locations
         $this->middleware('role.permission:delete location')->only('destroy');
 
-        $this->middleware('role.permission:list locations')->only('index'); // Uncomment if index needs permission
+        // $this->middleware('role.permission:list locations')->only('index'); // Uncomment if index needs permission
         $this->middleware('role.permission:show location')->only('show');   // Uncomment if show needs permission
     }
 

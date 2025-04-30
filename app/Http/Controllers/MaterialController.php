@@ -24,7 +24,6 @@ class MaterialController extends Controller
         // Apply permission checks for modification actions
         // Use 'manage materials' or create granular permissions (create, update, delete)
         $this->middleware('role.permission:manage materials')->only(['store', 'update', 'destroy']);
-
         // Optional: If index/show should also require a permission (e.g., 'list materials')
         $this->middleware('role.permission:list materials')->only(['index', 'show']);
     }
@@ -79,7 +78,7 @@ class MaterialController extends Controller
                 'name' => 'required|string|max:255|unique:materials,name',
                 'description' => 'nullable|string',
                 // 'identifier' => 'nullable|string|max:100|unique:materials,identifier', // Optional SKU/Asset Tag
-                'quantity_available' => 'sometimes|required|integer|min:0', // If tracking stock
+                'quantity_available' => 'required|required|integer|min:0', // If tracking stock
             ]);
 
             // Add creator ID

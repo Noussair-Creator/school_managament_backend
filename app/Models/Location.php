@@ -45,10 +45,8 @@ class Location extends Model
      */
     public function reservations()
     {
-        // Links to the Reservations model via 'reservable_id' and 'reservable_type'
-        return $this->morphMany(Reservations::class, 'reservable');
+        return $this->hasMany(Reservation::class);
     }
-
     // (Keep getReservationsForTimeRange, scopeClassrooms, scopeLaboratories, scopeAmphitheaters as before)
 
     /**
